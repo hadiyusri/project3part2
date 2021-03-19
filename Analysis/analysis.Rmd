@@ -15,46 +15,41 @@ parameter: k- the number of folds
 The function returns the numeric with cross validation error.
 
 ```{r}
-# data(my_penguins)
 my_penguins <- my_penguins %>% drop_na()
-
-# create a list to label the number of folds
-folds <- c(rep("2", 30), rep("5", 30), rep("10", 30))
-# create empty lists to store MSE
-MSE_2 <- rep(NA, length(30))
-MSE_5 <- rep(NA, length(30))
-MSE_10 <- rep(NA, length(30))
-# fill MSE data
-for (k in 1:30){
-  MSE_2[k] <- my_rf_cv(2)
-  MSE_5[k] <- my_rf_cv(5)
-  MSE_10[k] <- my_rf_cv(10)
+mse_mat <- matrix(nrow = 90, ncol = 2)
+ks <- c(2, 5, 10)
+for (i in 1:3) {
+  k <- ks[i]
+  for (j in 1:30) {
+    mse_mat[(i-1)*30+j, 1] <- k
+    mse_mat[(i-1)*30+j, 2] <- my_rf_cv(k)
+  }
 }
-# combine the label and data into one data frame
-MSE_data <- data.frame(names = folds,
-                       MSE = c(MSE_2, MSE_5, MSE_10))
-```
-```{r, fig.width=10,fig.height=11}
-# plot the data
-ggplot(data = MSE_data,
-       aes(x = names, MSE)) +
-  geom_boxplot(fill = "lightblue") +
-  theme_bw(base_size = 20) +
-  labs(title = "MSE According to Number of Folds",
-       x = "Number of Folds",
-       y = "MSE") +
+mse_df <- data.frame(names = mse_mat[,1], mse = mse_mat[,2])
+ggplot(data = mse_df, aes(group = k, x = k, y = mse)) +
+  geom_boxplot(fill = "yellow") +
+  labs(title = "MSE based on Folds", x = "Number of Folds", y = "MSE") +
+  theme_bw(base_size = 15) +
   theme(plot.title =
           element_text(hjust = 0.5),
-        text = element_text(size = 12))  
+        text = element_text(size = 10))
+mse_k2 <- (mse_df %>% filter(k == 2) %>% select(mse))$mse
+mse_k5 <- (mse_df %>% filter(k == 5) %>% select(mse))$mse
+mse_k10 <- (mse_df %>% filter(k == 10) %>% select(mse))$mse
+mse_stat <- rbind(c(2, mean(mse_k2), sd(mse_k2)),
+                       c(5, mean(mse_k5), sd(mse_k5)),
+                       c(10, mean(mse_k10), sd(mse_k10)))
 ```
 ```{r}
-MSE_table <- data.frame("folds" = c(2, 5, 10),
-                        "mean" = c(mean(MSE_2), mean(MSE_5), mean(MSE_10)),
-                        "std_deviation" = c(sd(MSE_2), sd(MSE_5), sd(MSE_10)))
-kable_styling(kable(MSE_table))
+mse_stats_df <- data.frame(k = mse_stat[,1],
+                           mse_mean = mse_stat[,2],
+                           mse_sd = mse_stat[,3])
+kable_styling(kable(mse_stats_df))
+write.csv(MSE_data, "../Output/Results/mse_data.csv")
+saveRDS(MSE_table, "../Output/Results/mse_table.RDS")
 ```
 
-### Explanation: from the boxplot, we can see that the number of folds = 2 records
+Explanation: from the boxplot, we can see that the number of folds = 2 records
 the highest mean among all three observations. However, the box is stretched
 to its biggest width among all three, which also can be seen in the table where 
 2 folds record the highest standard deviation of 6296.5 whereas the lowest 
