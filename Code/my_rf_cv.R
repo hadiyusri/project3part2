@@ -14,6 +14,7 @@
 #' @export
 # Calling the library randomForest
 library(randomForest)
+library(project3package)
 my_rf_cv <- function(k) {
   # Variable fold based on input parameter
   fold <- k

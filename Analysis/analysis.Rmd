@@ -8,22 +8,61 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+### This RMarkdown file interprets the function of my_rf_cv and its results.
+- This function predict output \code{body_mass_g} using covariates \code{bill_length_mm},
+\code{bill_depth_mm}, and \code{flipper_length_mm}.
+parameter: k- the number of folds
+The function returns the numeric with cross validation error.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r}
+# data(my_penguins)
+my_penguins <- my_penguins %>% drop_na()
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+# create a list to label the number of folds
+folds <- c(rep("2", 30), rep("5", 30), rep("10", 30))
+# create empty lists to store MSE
+MSE_2 <- rep(NA, length(30))
+MSE_5 <- rep(NA, length(30))
+MSE_10 <- rep(NA, length(30))
+# fill MSE data
+for (k in 1:30){
+  MSE_2[k] <- my_rf_cv(2)
+  MSE_5[k] <- my_rf_cv(5)
+  MSE_10[k] <- my_rf_cv(10)
+}
+# combine the label and data into one data frame
+MSE_data <- data.frame(names = folds,
+                       MSE = c(MSE_2, MSE_5, MSE_10))
+```
+```{r, fig.width=10,fig.height=11}
+# plot the data
+ggplot(data = MSE_data,
+       aes(x = names, MSE)) +
+  geom_boxplot(fill = "lightblue") +
+  theme_bw(base_size = 20) +
+  labs(title = "MSE According to Number of Folds",
+       x = "Number of Folds",
+       y = "MSE") +
+  theme(plot.title =
+          element_text(hjust = 0.5),
+        text = element_text(size = 12))  
+```
+```{r}
+MSE_table <- data.frame("folds" = c(2, 5, 10),
+                        "mean" = c(mean(MSE_2), mean(MSE_5), mean(MSE_10)),
+                        "std_deviation" = c(sd(MSE_2), sd(MSE_5), sd(MSE_10)))
+kable_styling(kable(MSE_table))
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### Explanation: from the boxplot, we can see that the number of folds = 2 records
+the highest mean among all three observations. However, the box is stretched
+to its biggest width among all three, which also can be seen in the table where 
+2 folds record the highest standard deviation of 6296.5 whereas the lowest 
+standard deviation is recorded in 10  folds with 2433.0. This is the expected case
+as smaller number of folds tend to be collected in a large group which also
+include extreme values that stretches the mean and increase the
+variability of the data. Higher number of folds means that most observations
+are categorized based on approximated placement in the graph which means
+that the mean of every fold is lower due to lack of extreme values. Hence,
+this lack of variability also decreases the standard deviation that explains the
+distribution patterns in the data folds.
